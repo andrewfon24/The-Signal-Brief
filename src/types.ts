@@ -1,11 +1,4 @@
-export type Topic =
-  | "SEO"
-  | "Paid media"
-  | "Marketing"
-  | "World"
-  | "Business"
-  | "Technology"
-  | "Science";
+export type Topic = "SEO" | "Paid media" | "Marketing" | "AI";
 export type Story = {
   id: string;
   title: string;
@@ -22,6 +15,8 @@ export type FeedSource = {
   topic: Topic;
   feedUrl: string;
   available: boolean;
+  storyCount: number;
+  error: string | null;
 };
 export type BriefResponse = {
   status: "live" | "stale" | "unavailable";

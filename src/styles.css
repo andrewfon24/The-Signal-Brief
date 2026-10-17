@@ -2112,3 +2112,24 @@ dialog::backdrop {
   margin: 0 28px 18px;
   line-height: 1.7;
 }
+
+.topic-dot.ai {
+  background: #8b85c1;
+}
+.topic-pill.ai {
+  color: #8b7daf;
+  background: #f3eff9;
+}
+.directory-note {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8a9b78;
+}
+.source-directory li {
+  flex-wrap: wrap;
+}
+.source-directory li > span {
+  margin-left: auto;
+  text-align: right;
+  max-width: 55%;
+}

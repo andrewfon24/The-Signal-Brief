@@ -26,13 +26,13 @@ const stories = [
     retrievedAt: "2026-10-17T11:00:00.000Z",
   },
   {
-    id: "test-world",
-    title: "Test fixture: world headline",
-    summary: "A test-only world news summary.",
-    topic: "World",
-    source: "BBC News",
-    url: "https://www.bbc.com/news/test-fixture",
-    feedUrl: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    id: "test-ai",
+    title: "Test fixture: AI headline",
+    summary: "A test-only AI product summary.",
+    topic: "AI",
+    source: "OpenAI News",
+    url: "https://openai.com/index/test-fixture",
+    feedUrl: "https://openai.com/news/rss.xml",
     publishedAt: "2026-10-15T10:00:00.000Z",
     retrievedAt: "2026-10-17T11:00:00.000Z",
   },
@@ -72,7 +72,7 @@ test("filters by topic, text, and publication, and exposes traceable source deta
     .locator(".tabs")
     .getByRole("button", { name: "All stories", exact: true })
     .click();
-  await page.getByLabel("Filter by publication").selectOption("BBC News");
+  await page.getByLabel("Filter by publication").selectOption("OpenAI News");
   await expect(page.locator(".story-card")).toHaveCount(1);
   await page.getByLabel("Filter by publication").selectOption("All sources");
   await page
@@ -194,4 +194,55 @@ test("corrupted browser storage does not break startup", async ({ page }) => {
   await expect(
     page.getByRole("dialog").getByRole("button", { name: "Download email" }),
   ).toBeDisabled();
+});
+test("removed publishers are excluded from bookmarks and email drafts", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const removed = {
+      id: "old-general-news",
+      title: "Old general news fixture",
+      summary: "Previously saved.",
+      topic: "World",
+      source: "BBC News",
+      url: "https://www.bbc.com/news/test-fixture",
+      feedUrl: "https://feeds.bbci.co.uk/news/world/rss.xml",
+      retrievedAt: "2026-10-17T11:00:00.000Z",
+      publishedAt: null,
+    };
+    localStorage.setItem("signal-saved", JSON.stringify([removed]));
+    localStorage.setItem("signal-draft-stories", JSON.stringify([removed]));
+  });
+  await page.goto("/");
+  await expect(
+    page.getByLabel("Filter by publication").locator("option"),
+  ).not.toContainText(["BBC News"]);
+  await page.getByRole("button", { name: "Saved stories" }).click();
+  await expect(page.locator(".story-card")).toHaveCount(0);
+  await page.getByRole("button", { name: "Email composer" }).click();
+  await expect(
+    page.getByRole("dialog").getByRole("button", { name: "Download email" }),
+  ).toBeDisabled();
+});
+test("official source directory distinguishes platform websites from automated feeds", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByText("Official platform sites & source directory").click();
+  const directory = page.locator(".official-sources");
+  await expect(
+    directory.getByRole("link", { name: "Google Ads & Commerce" }),
+  ).toHaveAttribute("href", "https://blog.google/products/ads-commerce/");
+  await expect(
+    directory.getByRole("link", { name: "TikTok for Business" }),
+  ).toHaveAttribute("href", "https://ads.tiktok.com/business/en-US/blog");
+  await expect(
+    directory.getByText("Website reference", { exact: true }),
+  ).toHaveCount(3);
+  await page
+    .locator(".tabs")
+    .getByRole("button", { name: "AI", exact: true })
+    .click();
+  await expect(page.locator(".story-card")).toHaveCount(1);
+  await expect(page.locator(".story-card")).toContainText("OpenAI News");
 });

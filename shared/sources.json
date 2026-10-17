@@ -1,0 +1,93 @@
+[
+  {
+    "id": "search-engine-land",
+    "source": "Search Engine Land",
+    "topic": "Marketing",
+    "kind": "publication",
+    "website": "https://searchengineland.com/",
+    "url": "https://searchengineland.com/feed",
+    "hosts": ["searchengineland.com", "www.searchengineland.com"]
+  },
+  {
+    "id": "google-ads",
+    "source": "Google Ads & Commerce",
+    "topic": "Paid media",
+    "kind": "platform",
+    "website": "https://blog.google/products/ads-commerce/",
+    "url": "https://blog.google/products/ads-commerce/rss/",
+    "hosts": ["blog.google", "www.blog.google"]
+  },
+  {
+    "id": "meta",
+    "source": "Meta Newsroom",
+    "topic": "Paid media",
+    "kind": "platform",
+    "website": "https://about.fb.com/news/",
+    "url": "https://about.fb.com/feed/",
+    "hosts": ["about.fb.com"],
+    "relevance": "\\b(advertis(?:ing|ers|ements?)?|ads|campaigns|marketing|business|advantage\\+?|attribution|conversions|commerce|generative ai|meta ai|llama)\\b"
+  },
+  {
+    "id": "microsoft-ads",
+    "source": "Microsoft Advertising",
+    "topic": "Paid media",
+    "kind": "platform",
+    "website": "https://about.ads.microsoft.com/en/blog",
+    "url": null,
+    "hosts": ["about.ads.microsoft.com"]
+  },
+  {
+    "id": "linkedin-ads",
+    "source": "LinkedIn Marketing Solutions",
+    "topic": "Paid media",
+    "kind": "platform",
+    "website": "https://www.linkedin.com/business/marketing/blog",
+    "url": null,
+    "hosts": ["www.linkedin.com", "linkedin.com"]
+  },
+  {
+    "id": "tiktok-ads",
+    "source": "TikTok for Business",
+    "topic": "Paid media",
+    "kind": "platform",
+    "website": "https://ads.tiktok.com/business/en-US/blog",
+    "url": null,
+    "hosts": ["ads.tiktok.com"]
+  },
+  {
+    "id": "openai",
+    "source": "OpenAI News",
+    "topic": "AI",
+    "kind": "ai",
+    "website": "https://openai.com/news/",
+    "url": "https://openai.com/news/rss.xml",
+    "hosts": ["openai.com", "www.openai.com"]
+  },
+  {
+    "id": "techcrunch-ai",
+    "source": "TechCrunch AI",
+    "topic": "AI",
+    "kind": "publication",
+    "website": "https://techcrunch.com/category/artificial-intelligence/",
+    "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "hosts": ["techcrunch.com", "www.techcrunch.com"]
+  },
+  {
+    "id": "marketing-dive",
+    "source": "Marketing Dive",
+    "topic": "Marketing",
+    "kind": "publication",
+    "website": "https://www.marketingdive.com/",
+    "url": "https://www.marketingdive.com/feeds/news/",
+    "hosts": ["www.marketingdive.com", "marketingdive.com"]
+  },
+  {
+    "id": "search-engine-journal",
+    "source": "Search Engine Journal",
+    "topic": "Marketing",
+    "kind": "publication",
+    "website": "https://www.searchenginejournal.com/",
+    "url": "https://www.searchenginejournal.com/feed/",
+    "hosts": ["www.searchenginejournal.com", "searchenginejournal.com"]
+  }
+]

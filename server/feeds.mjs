@@ -1,32 +1,9 @@
 import Parser from "rss-parser";
 import { createHash } from "node:crypto";
 
-export const feeds = [
-  {
-    topic: "SEO",
-    source: "Search Engine Land",
-    url: "https://searchengineland.com/library/seo/feed",
-    hosts: ["searchengineland.com", "www.searchengineland.com"],
-  },
-  {
-    topic: "Paid media",
-    source: "Search Engine Land",
-    url: "https://searchengineland.com/library/ppc/feed",
-    hosts: ["searchengineland.com", "www.searchengineland.com"],
-  },
-  {
-    topic: "Marketing",
-    source: "Search Engine Land",
-    url: "https://searchengineland.com/feed",
-    hosts: ["searchengineland.com", "www.searchengineland.com"],
-  },
-  ...["World", "Business", "Technology", "Science"].map((topic) => ({
-    topic,
-    source: "BBC News",
-    url: `https://feeds.bbci.co.uk/news/${topic === "Science" ? "science_and_environment" : topic.toLowerCase()}/rss.xml`,
-    hosts: ["www.bbc.com", "www.bbc.co.uk", "bbc.com", "bbc.co.uk"],
-  })),
-];
+import sourceRegistry from "../shared/sources.json" with { type: "json" };
+
+export const feeds = sourceRegistry.filter((source) => source.url);
 const parser = new Parser();
 export function plainText(value = "") {
   return String(value)
@@ -67,6 +44,15 @@ export function normalizeItem(
   const categories = (
     Array.isArray(item.categories) ? item.categories : []
   ).join(" ");
+  const summary = plainText(item.contentSnippet || item.content || "").slice(
+    0,
+    700,
+  );
+  if (
+    feed.relevance &&
+    !new RegExp(feed.relevance, "i").test(`${title} ${summary} ${categories}`)
+  )
+    return null;
   const topic =
     feed.topic === "Marketing"
       ? /\b(ppc|paid search|paid media|paid social|google ads|microsoft advertising)\b/i.test(
@@ -82,7 +68,7 @@ export function normalizeItem(
   return {
     id: createHash("sha256").update(url.href).digest("hex").slice(0, 20),
     title,
-    summary: plainText(item.contentSnippet || item.content || "").slice(0, 700),
+    summary,
     topic,
     source: feed.source,
     url: url.href,
@@ -122,8 +108,15 @@ export async function fetchStories(fetcher = fetch) {
       source: feed.source,
       topic: feed.topic,
       feedUrl: feed.url,
-      available:
-        results[i].status === "fulfilled" && results[i].value.length > 0,
+      available: results[i].status === "fulfilled",
+      storyCount:
+        results[i].status === "fulfilled" ? results[i].value.length : 0,
+      error:
+        results[i].status === "fulfilled"
+          ? null
+          : /^Feed HTTP \d{3}$/.test(results[i].reason?.message || "")
+            ? results[i].reason.message
+            : "Feed could not be retrieved or parsed",
     })),
   };
 }

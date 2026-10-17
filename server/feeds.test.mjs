@@ -6,6 +6,7 @@ import { emailFile, emailText } from "../src/email.ts";
 const spec = feeds[0];
 const item = {
   title: "Test SEO headline",
+  categories: ["SEO"],
   link: "https://searchengineland.com/test-fixture?utm_source=rss#top",
   content: "<p>A source-provided <b>summary</b>.</p>",
   pubDate: "Fri, 16 Oct 2026 12:00:00 GMT",
@@ -43,20 +44,29 @@ test("rejects non-source domains, insecure URLs, embedded credentials, missing t
   );
   assert.equal(plainText("<p>Search &amp; media</p>"), "Search & media");
 });
-test("parses actual RSS structure, deduplicates cross-posts, and retains specialist topic", async () => {
+test("parses RSS, deduplicates repeated articles, and classifies SEO", async () => {
   const xml =
-    '<?xml version="1.0"?><rss version="2.0"><channel><title>Test fixture only</title><item><title>Test SEO headline</title><link>https://searchengineland.com/test-fixture</link><description><![CDATA[<p>Source text.</p>]]></description><pubDate>Fri, 16 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+    '<?xml version="1.0"?><rss version="2.0"><channel><title>Test fixture only</title><item><title>Test SEO headline</title><link>https://searchengineland.com/test-fixture</link><description><![CDATA[<p>Source text.</p>]]></description><pubDate>Fri, 16 Oct 2026 12:00:00 GMT</pubDate><category>SEO</category></item></channel></rss>';
   const result = await fetchStories(
     async (url) =>
-      new Response(xml, {
-        status: url.includes("searchengineland.com") ? 200 : 503,
-      }),
+      new Response(
+        xml.replace(
+          "</channel>",
+          xml.match(/<item>.*?<\/item>/s)[0] + "</channel>",
+        ),
+        {
+          status: url.includes("searchengineland.com") ? 200 : 503,
+        },
+      ),
   );
   assert.equal(result.stories.length, 1);
   assert.equal(result.stories[0].topic, "SEO");
   assert.equal(result.stories[0].summary, "Source text.");
-  assert.equal(result.sources.filter((s) => s.available).length, 3);
-  assert.equal(result.sources.filter((s) => !s.available).length, 4);
+  assert.equal(result.sources.filter((s) => s.available).length, 1);
+  assert.equal(
+    result.sources.filter((s) => !s.available).length,
+    feeds.length - 1,
+  );
 });
 test("unavailable or invalid feeds produce no invented stories", async () => {
   for (const fetcher of [
@@ -84,6 +94,68 @@ test("classifies performance marketing categories in the general Search Engine L
   assert.equal(
     normalizeItem({ ...item, categories: ["Industry"] }, general).topic,
     "Marketing",
+  );
+});
+test("official platform and AI stories retain their own publishers and reject unrelated domains", () => {
+  for (const source of feeds.filter((source) =>
+    ["platform", "ai"].includes(source.kind),
+  )) {
+    const story = normalizeItem(
+      {
+        ...item,
+        title: "Advertising and AI product update",
+        link: new URL("/test-fixture", source.website).href,
+      },
+      source,
+    );
+    assert.equal(story.source, source.source);
+    assert.equal(story.feedUrl, source.url);
+    assert.equal(
+      normalizeItem(
+        {
+          ...item,
+          link: "https://searchengineland.com/not-the-official-source",
+        },
+        source,
+      ),
+      null,
+    );
+  }
+});
+test("Meta newsroom rejects irrelevant general news and accepts advertising and AI updates", () => {
+  const meta = feeds.find((source) => source.id === "meta");
+  const base = {
+    link: "https://about.fb.com/news/test-fixture",
+    categories: [],
+    content: "A company update.",
+  };
+  assert.equal(
+    normalizeItem({ ...base, title: "A new community sculpture" }, meta),
+    null,
+  );
+  assert.equal(
+    normalizeItem({ ...base, title: "New tools for advertisers" }, meta).source,
+    "Meta Newsroom",
+  );
+  assert.equal(
+    normalizeItem({ ...base, title: "Introducing Meta AI improvements" }, meta)
+      .source,
+    "Meta Newsroom",
+  );
+});
+test("a reachable feed with no relevant stories is available and does not invent content", async () => {
+  const result = await fetchStories(
+    async () =>
+      new Response(
+        '<?xml version="1.0"?><rss version="2.0"><channel><title>Empty feed fixture</title></channel></rss>',
+      ),
+  );
+  assert.equal(result.stories.length, 0);
+  assert.ok(
+    result.sources.every(
+      (source) =>
+        source.available && source.storyCount === 0 && source.error === null,
+    ),
   );
 });
 test("email includes direct article and feed links, dates, and safely encoded headers", () => {

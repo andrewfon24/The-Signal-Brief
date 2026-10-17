@@ -32,18 +32,30 @@ There is no account system, recipient list, scheduler, or automatic email sendin
 
 ## Sources and traceability
 
-**Search Engine Land** provides SEO, paid search, and performance marketing coverage. **BBC News** provides wider business, technology, world, and science headlines. Configured RSS endpoints are declared in `server/feeds.mjs`:
+Sources are maintained in a single registry, `shared/sources.json`, shared by the feed service and the dashboard. Coverage focuses on SEO, paid media, marketing, and AI:
 
-- `https://searchengineland.com/feed`
-- `https://searchengineland.com/library/seo/feed`
-- `https://searchengineland.com/library/ppc/feed`
-- `https://feeds.bbci.co.uk/news/{world,business,technology,science_and_environment}/rss.xml`
+| Source                       | Coverage                                 | Integration                                                  |
+| ---------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| Search Engine Land           | SEO and performance marketing            | Working main RSS feed; topic tags classify articles          |
+| Google Ads & Commerce        | Official advertising updates             | RSS configured; publisher access still blocked in onboarding |
+| Meta Newsroom                | Official advertising/business/AI updates | RSS configured with a relevance filter; access blocked       |
+| OpenAI News                  | Official AI updates                      | RSS configured; access blocked                               |
+| TechCrunch AI                | AI industry reporting                    | RSS configured; access blocked                               |
+| Marketing Dive               | Marketing industry reporting             | RSS configured; access blocked                               |
+| Search Engine Journal        | Search and marketing reporting           | RSS configured; access blocked                               |
+| Microsoft Advertising        | Official ad-platform blog                | Website reference only                                       |
+| LinkedIn Marketing Solutions | Official marketing blog                  | Website reference only                                       |
+| TikTok for Business          | Official marketing blog                  | Website reference only                                       |
+
+Website references are clearly labeled in the source directory. They provide direct official links, not automatically imported articles. No RSS feed is invented for a platform that does not have a verified endpoint. The configured replacement feeds remain unverified until network access is applied. Meta's general newsroom is filtered to advertising, business, commerce, and AI topics.
+
+Search Engine Land's main feed was successfully fetched after publication. Its older category endpoints return HTTP 403, so they have been removed. General-interest news feeds are excluded. Previously saved stories from removed publishers are excluded from bookmarks and email drafts on startup.
 
 Every displayed story retains the publisher's headline/summary, original HTTPS article URL, feed URL, publication date (when supplied), and retrieval timestamp. Article hosts must match the feed's publisher allowlist; invalid, insecure, and unrelated links are discarded. Tracking parameters are stripped, duplicate stories are merged, and specialized topics are preserved. Summaries are publisher-provided, **not AI-generated or independently fact-checked**. Original links and provenance are also included in email exports.
 
 Feeds cache in memory for five minutes. Individual source failures do not suppress working sources. If refresh fails, cached stories are labeled stale; without a cache, the app shows an empty state. **There are no sample or invented news stories in the application.** The feed-status panel reports each configured feed's availability.
 
-The onboarding machine currently rejects outbound requests to the publisher feeds with a proxy `403`. Their URLs are configured but current feed/article contents have **not** been verified from this machine. Enable `feeds.bbci.co.uk`, `searchengineland.com`, and `www.searchengineland.com` in the environment's network settings, then refresh. These domain requirements have been saved in the environment configuration draft.
+The published network policy now allows Search Engine Land, and live RSS retrieval has been checked. Original article-page requests still return HTTP 403 in this machine; their links are retained from the publisher feed, and full article contents have not been independently inspected. The newly added publishers still return proxy 403 errors. Their required domains are saved in the environment configuration draft. Preserve the package-manager network preset; review and save the new source-domain settings, then publish to apply them. A failed source remains visible in feed status and does not prevent working feeds from supplying stories.
 
 ## Validation
 

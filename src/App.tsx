@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { BriefResponse, Story, Topic } from "./types";
 import { emailFile, emailText } from "./email";
+import { sources, sourceLabel, isAllowedStory } from "./sources";
 
 type Draft = { stories: Story[]; subject: string; intro: string };
 const today = new Intl.DateTimeFormat("en", {
@@ -51,22 +52,7 @@ function stored<T>(key: string, fallback: T): T {
 }
 function loadStories(key: string) {
   const value = stored<unknown>(key, []);
-  return Array.isArray(value)
-    ? value.filter(
-        (s): s is Story =>
-          s &&
-          typeof s.id === "string" &&
-          typeof s.title === "string" &&
-          typeof s.topic === "string" &&
-          typeof s.summary === "string" &&
-          typeof s.source === "string" &&
-          typeof s.url === "string" &&
-          /^https:\/\//.test(s.url) &&
-          typeof s.feedUrl === "string" &&
-          typeof s.retrievedAt === "string" &&
-          ["Search Engine Land", "BBC News"].includes(s.source),
-      )
-    : [];
+  return Array.isArray(value) ? value.filter(isAllowedStory) : [];
 }
 function loadDraft(): Draft {
   const value = stored<Partial<Draft>>("signal-draft", {});
@@ -82,10 +68,7 @@ const topics: Array<"All stories" | Topic> = [
   "SEO",
   "Paid media",
   "Marketing",
-  "World",
-  "Business",
-  "Technology",
-  "Science",
+  "AI",
 ];
 const readTime = (stories: Story[]) =>
   Math.max(
@@ -160,7 +143,8 @@ export default function App() {
     try {
       const res = await fetch("/api/briefs");
       if (!res.ok) throw new Error();
-      setFeed(await res.json());
+      const data: BriefResponse = await res.json();
+      setFeed({ ...data, stories: data.stories.filter(isAllowedStory) });
     } catch {
       setError(
         "Could not load your stories. Check your connection and try again.",
@@ -336,7 +320,7 @@ export default function App() {
               <h1>
                 {view === "saved"
                   ? "Worth coming back to."
-                  : "A world of news."}
+                  : "Your marketing radar."}
                 <br />
                 <span>
                   {view === "saved"
@@ -347,7 +331,7 @@ export default function App() {
               <p>
                 {view === "saved"
                   ? "The stories you’ve kept, ready when you are."
-                  : "Search, media, and the wider world. Every story traced to its source."}
+                  : "Ad platforms, AI, and marketing. Every story traced to its source."}
               </p>
             </div>
             <button
@@ -374,7 +358,7 @@ export default function App() {
                       More perspective.
                     </h2>
                     <p>
-                      Follow the signals shaping search, media,
+                      Follow the signals shaping search, ads, and AI,
                       <br className="desktop-break" /> and the world around your
                       business.
                     </p>
@@ -489,8 +473,11 @@ export default function App() {
                     onChange={(e) => setSource(e.target.value)}
                   >
                     <option>All sources</option>
-                    <option>Search Engine Land</option>
-                    <option>BBC News</option>
+                    {sources
+                      .filter((s) => s.url)
+                      .map((s) => (
+                        <option key={s.id}>{s.source}</option>
+                      ))}
                   </select>
                 </label>
                 <span>Source summaries · Direct article links</span>
@@ -601,7 +588,7 @@ export default function App() {
               {!!feed?.sources.length && (
                 <details className="source-directory">
                   <summary>
-                    Source feed status ·{" "}
+                    Automatic feed status ·{" "}
                     {feed.sources.filter((s) => s.available).length}/
                     {feed.sources.length} available
                   </summary>
@@ -613,13 +600,37 @@ export default function App() {
                           <ArrowUpRight size={11} />
                         </a>
                         <span className={s.available ? "source-available" : ""}>
-                          {s.available ? "Available" : "Unavailable"}
+                          {s.available
+                            ? `Available · ${s.storyCount} stories`
+                            : s.error || "Unavailable"}
                         </span>
                       </li>
                     ))}
                   </ul>
                 </details>
               )}
+              <details className="source-directory official-sources">
+                <summary>
+                  Official platform sites &amp; source directory
+                </summary>
+                <p className="directory-note">
+                  Website references link directly to the platform. They do not
+                  supply dashboard stories until an automatic feed is verified.
+                </p>
+                <ul>
+                  {sources.map((s) => (
+                    <li key={s.id}>
+                      <a href={s.website} target="_blank" rel="noreferrer">
+                        {s.source}
+                        <ArrowUpRight size={11} />
+                      </a>
+                      <span>
+                        {s.url ? sourceLabel(s.source) : "Website reference"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
               <div className="feed-footer">
                 <Radio size={14} />
                 <span>A little less scrolling. A little more knowing.</span>
@@ -724,8 +735,8 @@ export default function App() {
               <div className="source-note">
                 <Globe2 size={15} />
                 <p>
-                  Headlines and source summaries from Search Engine Land and BBC
-                  News. Every story links to its original article.
+                  Official ad-platform updates, AI news, and marketing
+                  reporting. Every story links to its original article.
                 </p>
               </div>
             </aside>
@@ -894,15 +905,18 @@ export default function App() {
           with a simple daily email composer.
         </p>
         <p>
-          Stories come from Search Engine Land and BBC RSS feeds. Every story
-          retains its original article link, source feed, and retrieval date. If
-          feeds are unavailable, no sample or invented stories are shown.
-          Summaries are supplied by the publisher, not generated by AI.
+          Stories come from official ad-platform feeds, AI news, and marketing
+          publications including Search Engine Land. Every story retains its
+          original article link, source feed, and retrieval date. If feeds are
+          unavailable, no sample or invented stories are shown. Summaries are
+          supplied by the publisher, not generated by AI.
         </p>
         <p>
           Source attribution lets you verify the original reporting. It is not
           an independent fact check. Search Engine Land coverage includes SEO,
-          paid search, and performance marketing.
+          paid search, and performance marketing. Microsoft Advertising,
+          LinkedIn, and TikTok are listed as website references until an
+          automatic feed is verified.
         </p>
         <p>
           Your bookmarks and email draft stay in this browser. This version has
@@ -968,10 +982,8 @@ function StoryCard({
         )}
       </h3>
       <p>{story.summary}</p>
-      <div className="story-source">
-        <span className="source-monogram">
-          {story.source === "BBC News" ? "B" : "S"}
-        </span>
+      <div className="story-source" title={sourceLabel(story.source)}>
+        <span className="source-monogram">{story.source.charAt(0)}</span>
         <span>{story.source}</span>
         <span className="source-date">
           {story.publishedAt
@@ -999,7 +1011,10 @@ function StoryCard({
             : "Not supplied"}
         </span>
         <span>Retrieved: {new Date(story.retrievedAt).toLocaleString()}</span>
-        <span>Publisher-provided summary; not independently fact-checked.</span>
+        <span>
+          {sourceLabel(story.source)} · Publisher-provided summary; not
+          independently fact-checked.
+        </span>
       </details>
       <div className="story-bottom">
         <span>
